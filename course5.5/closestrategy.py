@@ -83,10 +83,11 @@ for i in range(len(history_data["Close"])):
                 down_markers.append(history_data["Open"][i] + 20)
                 # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
                 cash += (history_data["Open"][i] - tick) * tick_price - 2 * fees
-                # 投資報酬率增加賣出價格除以初始資金
-                ROI.append(cash / cashlist[0])
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
+                # 投資報酬率增加賣出價格減買入價格除以初始資金
+                ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+
                 # 賣出後沒有持倉，將pos設為0
                 pos = 0
             else:
@@ -119,11 +120,11 @@ ROI_value = [x for x in ROI if np.isnan(x) == False]
 d = [buy_date, buyprice, sell_date, sellprice, ROI_value]
 df = pd.DataFrame(d, index=["買進日期", "買進價格", "賣出日期", "賣出價格", "投資報酬率"])
 print(df.to_string())
-print("最終投資報酬率:", ROI_value[-1])
 print("最終持有資金:", cash)
-print("勝率:", wincounts / len(sellprice))
-print("賺賠比:", wintotal * losscounts / (wincounts * losstotal))
-
+if ROI_value:
+    print("最終投資報酬率:", np.round(sum(ROI_value),4))
+    print("勝率:", np.round(wincounts / len(sellprice),4))
+    print("賺賠比:", np.round(wintotal * losscounts / (wincounts * losstotal),4))
 # 想要增加的圖表
 added_plots = {"Upper": mpf.make_addplot(upper),
                "Lower": mpf.make_addplot(lower),
