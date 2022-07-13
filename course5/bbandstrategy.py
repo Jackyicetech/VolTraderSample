@@ -91,7 +91,7 @@ for i in range(len(history_data["Close"])):
                 cash += (history_data["Open"][i] - tick) * tick_price - 2 * fees
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
-                # 投資報酬率增加賣出價格除以初始資金
+                # 投資報酬率增加賣出價格減買入價格除以初始資金
                 ROI_long.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
                 ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
 
