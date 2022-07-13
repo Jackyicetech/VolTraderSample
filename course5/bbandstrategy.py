@@ -79,7 +79,6 @@ for i in range(len(history_data["Close"])):
             # 如果上分鐘市場價高於上軌且這分鐘市場價又低於上軌，且在有持倉的情況下，則在下分鐘進行賣出的動作，同樣套用到下軌上，或是有持倉即將閉市進行賣出
             elif (diff[i - 1] < 0 < diff[i - 2] or diff2[i - 1] < 0 < diff2[i - 2] or i == len(
                     history_data["Close"]) - 1) and pos == 1:
-
                 sell_date.append(history_data.index[i])
                 sellprice.append(history_data["Open"][i])
                 # 買進點增加nan
@@ -90,11 +89,12 @@ for i in range(len(history_data["Close"])):
                 down_markers.append(history_data["Open"][i] + 20)
                 # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
                 cash += (history_data["Open"][i] - tick) * tick_price - 2 * fees
-                # 投資報酬率增加賣出價格除以初始資金
-                ROI.append(cash / cashlist[0])
-                ROI_long.append(cash / cashlist[0])
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
+                # 投資報酬率增加賣出價格除以初始資金
+                ROI_long.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+                ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+
                 # 賣出後沒有持倉，將pos設為0
                 pos = 0
             # 如果價格由高往低穿過中軌，則進行放空
@@ -128,11 +128,12 @@ for i in range(len(history_data["Close"])):
                 down_markers.append(np.nan)
                 # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
                 cash += (tick - history_data["Open"][i]) * tick_price - 2 * fees
-                # 投資報酬率增加賣出價格除以初始資金
-                ROI_short.append(cash / cashlist[0])
-                ROI.append(cash / cashlist[0])
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
+                # 投資報酬率增加賣出價格減買入價格除以初始資金
+                ROI_short.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+                ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+
                 # 賣出後沒有持倉，將pos設為0
                 pos = 0
             else:
@@ -175,9 +176,9 @@ print(df.to_string())
 print(df2.to_string())
 print("最終持有資金:", cash)
 if ROI_value:
-    print("最終投資報酬率:", ROI_value[-1])
-    print("勝率:", wincounts / len(sellprice))
-    print("賺賠比:", wintotal * losscounts / (wincounts * losstotal))
+    print("最終投資報酬率:", np.round(sum(ROI_value),4))
+    print("勝率:", np.round(wincounts / len(sellprice),4))
+    print("賺賠比:", np.round(wintotal * losscounts / (wincounts * losstotal),4))
 
     # 想要增加的圖表
     added_plots = {"Upperband": mpf.make_addplot(upperband),
