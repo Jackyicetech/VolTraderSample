@@ -42,7 +42,7 @@ lower = []
 # 每筆買進時的價格
 tick = 0
 # 設定停損價格，如果當前價格低於買進時減停損價則進行賣出
-stop_price = 100
+stop_price = 10
 # 設定上一分K的最高最低價
 last_low = history_data['Low']
 last_high = history_data['High']
@@ -54,7 +54,7 @@ for i in range(len(history_data["Close"])):
         middle.append((last_low[i - 1] + last_high[i - 1]) / 2)
         lower.append(last_high[i - 1] - (last_high[i - 1] - last_low[i - 1]) * 1.382)
         # 增加過濾條件
-        if last_high[i - 1] - last_low[i - 1] >= 2:
+        if last_high[i - 1] - last_low[i - 1] >= 1:
             # 如果開盤價大於等於上關價並且沒有持倉則進行買入
             if history_data['Open'][i] >= upper[i] and pos == 0:
                 buy_date.append(history_data.index[i])
