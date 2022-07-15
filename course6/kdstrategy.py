@@ -71,8 +71,8 @@ for i in range(len(history_data["Close"])):
             ROI_daily.append((equity[-1] - equity[-2]) / equity[-2])
             # 紀錄買進口數
             quantity.append(1)
-            # 買進時補0進回撤列表中
-            DD.append(0)
+            # 買進時延續上一個tdd
+            DD.append(tdd)
 
         # 如果前天的K線高於D線時以及昨天的K線低於D線時(死亡交叉)、下跌超過止損價或今天是最後一天，且在有持倉的情況下，今天就以開盤價的價格賣出
         elif (diff[i - 1] < 0 < diff[i - 2] or history_data["Close"][i - 1] <= (tick - stop_price) or i == len(
@@ -115,7 +115,6 @@ for i in range(len(history_data["Close"])):
                 else:
                     mdd = min(tdd, mdd)
             else:
-                tdd = 0
                 equity.append(equity[-1])
             DD.append(tdd)
             # 其餘情況增加nan值
@@ -176,14 +175,14 @@ table.add_rows(rows=[["總投資報酬率(未扣手續費):", np.round(sum(ROI_v
                      ["期望值:", np.round(earn_ratio * odds - (1 - earn_ratio), 4)],
                      ["總交易次數:", len(buy_date) + len(sell_date)],
                      ["總手續費:", len(sell_date) * fees * 2],
-                     ["最大資金回撤:", mdd],
+                     ["最大資金回撤:", np.round(mdd, 4)],
                      ["年化標準差:", np.round(annual_std, 4)],
                      ["年化變異數:", np.round(annual_std ** 2, 4)],
                      ["年均複合增長率:", np.round((1 + sum(ROI_value)) ** (2 / 3) - 1, 4)],
                      ["Alpha:", np.round(alpha, 4)],
                      ["Beta:", np.round(beta, 4)],
                      ["Sharp Ratio:", np.round(sharp_ratio, 4)],
-                     ["Treynor ratio:", np.round((np.mean(ROI_daily) - riskfree)/beta, 4)]])
+                     ["Treynor ratio:", np.round((np.mean(ROI_daily) - riskfree) / beta, 4)]])
 table.align = "l"
 print(table)
 
