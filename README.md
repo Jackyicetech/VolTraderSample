@@ -8,3 +8,7 @@ EX:[【手把手系列】達錢 Python 【行情&歷史數據】串接設定教�
 tcoreapi_mq裡存放著連接VolTrader、登出、訂閱報價、歷史數據等等的函式\
 quote_functions裡則是可以更改即時報價輸出的資訊內容\
 trade_functions除了下單、改單等功能外也可以查詢資金帳號
+# 課程列表
+Course1: [【手把手系列】達錢 Python 【行情&歷史數據】串接設定教學](https://www.touchance.com.tw/vt_post?idno=200)\
+Course2: [【手把手系列】達錢 Python 第一個指標（均線）](https://www.touchance.com.tw/vt_post?idno=201)\
+Course3: [【手把手系列】均線策略 + 回測教學](https://www.touchance.com.tw/vt_post?idno=202)
