@@ -40,6 +40,10 @@ DD = []
 tick = 0
 # 設定停損價格，如果當前價格低於買進時減停損價則進行賣出
 stop_price = 10
+# 紀錄總交易日
+dates = 0
+# 紀錄最大回徹天數
+temp = count = 0
 
 # 計算KD值
 slowk, slowd = talib.STOCH(history_data['High'], history_data['Low'], history_data['Close'], fastk_period=9,
@@ -100,10 +104,14 @@ for i in range(len(history_data["Close"])):
             tdd += (history_data["Open"][i] - history_data["Open"][i - 1]) * tick_price / cashlist[0]
             if tdd > 0:
                 tdd = 0
+                temp = 0
             else:
                 mdd = min(tdd, mdd)
+                temp += 1
+                count = max(temp, count)
             # 紀錄賣出時的回撤值到回撤列表中
             DD.append(tdd)
+
         else:
             if pos:
                 equity.append((history_data["Open"][i] - history_data["Open"][i - 1]) * tick_price + equity[-1])
@@ -112,8 +120,11 @@ for i in range(len(history_data["Close"])):
                 tdd += (history_data["Open"][i] - history_data["Open"][i - 1]) * tick_price / cashlist[0]
                 if tdd > 0:
                     tdd = 0
+                    temp = 0
                 else:
                     mdd = min(tdd, mdd)
+                    temp += 1
+                    count = max(temp, count)
             else:
                 equity.append(equity[-1])
             DD.append(tdd)
@@ -136,6 +147,9 @@ for i in range(len(sellprice)):
     else:
         losscounts += 1
         losstotal += sellprice[i] - buyprice[i]
+    date = sell_date[i] - buy_date[i]
+    dates += date.days
+
 averge_win = wintotal / wincounts * tick_price / cashlist[0]
 averge_loss = losstotal / losscounts * tick_price / cashlist[0]
 
@@ -163,8 +177,11 @@ odds = averge_win / abs(averge_loss)
 annual_std = np.std(ROI_daily) * np.sqrt(len(ROI_daily)) / np.sqrt(cashlist[0])
 sharp_ratio = (np.mean(ROI_daily) - riskfree) / np.std(ROI_daily) * np.sqrt(len(ROI_daily))
 table = PrettyTable(["各項指標名稱", "數值"])
+
 table.add_rows(rows=[["總投資報酬率(未扣手續費):", np.round(sum(ROI_value) + len(sell_date) * fees * 2 / cashlist[0], 4)],
                      ["淨投資報酬率(扣手續費):", np.round(sum(ROI_value), 4)],
+                     ["總交易日:", dates],
+                     ["起始資金:", cashlist[0]],
                      ["最終持有資金:", cash],
                      ["淨利潤:", cash - cashlist[0]],
                      ["勝率:", earn_ratio],
@@ -176,6 +193,12 @@ table.add_rows(rows=[["總投資報酬率(未扣手續費):", np.round(sum(ROI_v
                      ["總交易次數:", len(buy_date) + len(sell_date)],
                      ["總手續費:", len(sell_date) * fees * 2],
                      ["最大資金回撤:", np.round(mdd, 4)],
+                     ["最大回撤天數:", count],
+                     ["日均盈虧:", np.round((cash - cashlist[0]) / dates, 4)],
+                     ["日均手續費:", np.round(len(sell_date) * fees * 2 / dates, 4)],
+                     ["日均成交金額:", np.round(sum(sellprice + buyprice) * tick_price / dates, 4)],
+                     ["日均成交筆數:", np.round((len(buy_date) + len(sell_date)) / dates, 4)],
+                     ["年化收益率:", np.round(sum(ROI_value) / 1.5, 4)],
                      ["年化標準差:", np.round(annual_std, 4)],
                      ["年化變異數:", np.round(annual_std ** 2, 4)],
                      ["年均複合增長率:", np.round((1 + sum(ROI_value)) ** (2 / 3) - 1, 4)],
