@@ -198,7 +198,7 @@ table.add_rows(rows=[["總投資報酬率(未扣手續費):", np.round(sum(ROI_v
                      ["日均手續費:", np.round(len(sell_date) * fees * 2 / dates, 4)],
                      ["日均成交金額:", np.round(sum(sellprice + buyprice) * tick_price / dates, 4)],
                      ["日均成交筆數:", np.round((len(buy_date) + len(sell_date)) / dates, 4)],
-                     ["年化收益率:", np.round(sum(ROI_value) / 1.5, 4)],
+                     ["年化收益率:", np.round(sum(ROI_value) / (history_data.index[-1]-history_data.index[0]).days*365, 4)],
                      ["年化標準差:", np.round(annual_std, 4)],
                      ["年化變異數:", np.round(annual_std ** 2, 4)],
                      ["年均複合增長率:", np.round((1 + sum(ROI_value)) ** (2 / 3) - 1, 4)],
