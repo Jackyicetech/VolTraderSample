@@ -1,21 +1,20 @@
-from pymongo import MongoClient
 from datetime import datetime
 import pandas as pd
 import numpy as np
 from pandas import date_range
 from exchange_calendars import get_calendar
 from vnpy.trader.object import BarData
-from vnpy.trader.database import database_manager
+from vnpy.trader.database import get_database
 from vnpy.trader.constant import Interval, Exchange
 
 
-def save_daily_data(data, collection_name):
+def save_daily_data(data):
     bars = []
 
     for row in data:
         bar = BarData(
             symbol="VolTrader",
-            exchange=Exchange.TFE,
+            exchange=Exchange.LOCAL,
             datetime=datetime.strptime(row['Date'], '%Y-%m-%d'),
             interval=Interval.DAILY,
             volume=row['Volume'],
@@ -28,12 +27,12 @@ def save_daily_data(data, collection_name):
 
         bars.append(bar)
 
-    database_manager.save_bar_data(bars, collection_name)
+    database = get_database()
+    database.save_bar_data(bars)
 
 
 def read_history(date):
     output = []
-
     date_str = np.int64(date.strftime('%Y%m%d'))
     data = pd.read_csv("history_data.csv")
 
@@ -53,7 +52,7 @@ def read_history(date):
     return output
 
 
-def upload_daily_data(collection_name, start_date=datetime(2018, 1, 1), end_date=datetime(2022, 7, 15)):
+def upload_daily_data(start_date=datetime(2018, 1, 1), end_date=datetime(2022, 7, 15)):
     dates = date_range(start_date, end_date)
 
     tw_calendar = get_calendar('XTAI')
@@ -65,10 +64,10 @@ def upload_daily_data(collection_name, start_date=datetime(2018, 1, 1), end_date
             VolTrader_data = read_history(date)
 
             if VolTrader_data:
-                save_daily_data(VolTrader_data, collection_name)
+                save_daily_data(VolTrader_data)
                 print(f'Update {date} historical price of VolTrader success')
             else:
                 print(f'No VolTrader data found on {date}')
 
 
-upload_daily_data('VolTrader')
+upload_daily_data()

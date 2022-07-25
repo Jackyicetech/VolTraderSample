@@ -1,12 +1,12 @@
 from typing import Any
 from vnpy.trader.object import BarData
-from vnpy.app.cta_strategy import (
+from vnpy_ctastrategy import (
     CtaTemplate,
     BarGenerator,
     ArrayManager
 )
 from vnpy.trader.constant import Direction
-from vnpy.app.cta_strategy.backtesting import BacktestingEngine, OptimizationSetting
+from vnpy_ctastrategy.backtesting import BacktestingEngine, OptimizationSetting
 from datetime import datetime
 import plotly.io as pio
 
@@ -105,23 +105,22 @@ def get_commission(cost, multiplier, qty, direction):
 
 engine = BacktestingEngine()
 engine.set_parameters(
-    vt_symbol='VolTrader.TFE',
+    vt_symbol='VolTrader.LOCAL',
     interval='d',
     start=datetime(2018, 1, 1),
-    end=datetime(2022, 7, 1),
+    end=datetime(2022, 7, 15),
     rate=get_commission,  # 手續費
     slippage=2,  # 滑價
     size=200,  # 契約倍率
     pricetick=1,  # 價格變動單位
-    capital=500_000,  # 回測本金
-    collection_name='VolTrader'
+    capital=500_000  # 回測本金
+    # collection_name='bar_data'
 )
 
 settings = {
     'short_period': 12,
     'long_period': 24
 }
-
 engine.add_strategy(SMAStrategy, settings)
 engine.load_data()
 engine.run_backtesting()
@@ -131,9 +130,11 @@ engine.show_chart()
 
 for trade in engine.get_all_trades():
     print(trade)
-setting = OptimizationSetting()
-setting.set_target("total_net_pnl") # total_net_pnl, sharpe_ratio
-setting.add_parameter("short_period", 10, 20, 1)
-setting.add_parameter("long_period", 20, 30, 1)
 
-results = engine.run_optimization(setting)
+if __name__ == '__main__':
+    setting = OptimizationSetting()
+    setting.set_target("total_net_pnl")  # total_net_pnl, sharpe_ratio
+    setting.add_parameter("short_period", 10, 20, 1)
+    setting.add_parameter("long_period", 21, 30, 1)
+
+    results = engine.run_bf_optimization(setting)
