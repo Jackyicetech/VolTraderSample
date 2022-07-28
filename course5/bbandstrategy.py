@@ -52,17 +52,9 @@ eD = '2022072521'
 
 # 顯示歷史數據
 history_data = GetHistory(g_QuoteZMQ, g_QuoteSession, testSymbol, ktype, sD, eD)
-for i in range(len(history_data['Time'])):
 
-    if len(str(history_data["Time"][i])) == 4:
-        history_data["Time"][i] = "00" + str(history_data["Time"][i])[:2]
-    elif len(str(history_data["Time"][i])) == 5:
-        history_data["Time"][i] = "0" + str(history_data["Time"][i])[:3]
-    elif len(str(history_data["Time"][i])) == 6:
-        history_data["Time"][i] = str(history_data["Time"][i])[:4]
-
-history_data.index = pd.to_datetime(history_data["Date"].astype(str) + " " + history_data["Time"]) + timedelta(hours=8)
-
+history_data.index = pd.to_datetime(history_data["Date"] * 10000 + history_data["Time"] / 100,
+                                    format='%Y%m%d%H%M') + timedelta(hours=8)
 # 解除訂閱歷史數據
 g_QuoteZMQ.UnsubHistory(g_QuoteSession, testSymbol, ktype, sD, eD)
 # 登出帳號
@@ -71,7 +63,7 @@ g_QuoteZMQ.Logout(g_QuoteSession)
 # 設定各項初始參數及列表
 # 設定起始資金
 cash = 100000
-# 計算策略賺錢和輸錢的次數
+# 計算策略賺錢和賠錢的次數
 wincounts = 0
 wintotal = 0
 losscounts = 0
@@ -84,10 +76,10 @@ buyprice = []
 # 賣出日期及價格
 sell_date = []
 sellprice = []
-# 買空日期及價格
+# 空單進場日期及價格
 buyshort_date = []
 buyshortprice = []
-# 賣空日期及價格
+# 空單出場日期及價格
 sellshort_date = []
 sellshortprice = []
 # 投資報酬率
@@ -100,16 +92,22 @@ down_markers = []
 # 設定tick倍率
 tick_price = 200
 tick = 0
+reverse_price = 100
 # 設定手續費
 fees = 50
 # 是否持倉，0代表沒有，1則是有持倉
 pos = 0
 # 繪圖時訊號點距離價格的位置
-point = 50
+point = 1
 
 # 計算布林通道上中下三條線
-upperband, middleband, lowerband = talib.BBANDS(history_data["Close"], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+upperband, middleband, lowerband = talib.BBANDS(
+    history_data["Close"], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
 # 均線種類:matype 0:SMA 1:EMA 2:WMA ...
+# 計算均線濾網
+sma0 = talib.SMA(history_data["Close"], timeperiod=10)
+sma1 = talib.SMA(history_data["Close"], timeperiod=50)
+sma2 = talib.SMA(history_data["Close"], timeperiod=80)
 
 # 計算當前價格減去上軌跟下軌的值
 diff = history_data["Close"] - upperband
@@ -117,8 +115,10 @@ diff2 = history_data["Close"] - lowerband
 
 for i in range(len(history_data["Close"])):
     if 1 < i < len(history_data["Close"]):
-        # 如果上分鐘市場價低於下軌且這分鐘市場價又高於下軌，且在沒有做多的情況下進行買入
-        if diff2[i - 1] > 0 > diff2[i - 2] and pos <= 0:
+        # 如果上分鐘市場價高於下軌且這分鐘市場價又低於下軌，且在短均線皆大於長均線、沒有做多的情況下，或是空單價格上漲超過100點以上買進
+        if diff2[i - 1] < 0 < diff2[i - 2] and\
+            sma0[i - 1] > middleband[i - 1] > sma1[i - 1] > sma2[i - 1] and pos <= 0 or\
+                history_data["Open"][i - 1] >= tick + reverse_price and pos == -1:
             if pos == -1:
                 sellshort_date.append(history_data.index[i])
                 sellshortprice.append(history_data["Open"][i])
@@ -137,14 +137,16 @@ for i in range(len(history_data["Close"])):
             buy_date.append(history_data.index[i])
             buyprice.append(history_data["Open"][i])
             # 開盤價-20的位置紀錄買入訊號點
-            up_markers.append(history_data["Open"][i] - point)
+            up_markers.append(history_data["Low"][i] - point)
             # 賣出點增加nan
             down_markers.append(np.nan)
             # 買入後有持倉設為1
             pos = 1
 
-        # 如果上分鐘市場價低於上軌且這分鐘市場價又高於上軌，且在有沒有做空的情況下，則在下分鐘進行賣出的動作
-        elif diff[i - 1] > 0 > diff[i - 2] and pos >= 0:
+        # 如果上分鐘市場價低於上軌且這分鐘市場價又高於上軌，且在短均線皆小於長均線、沒有做空的情況下，或是做多後上下跌超過100點賣出
+        elif diff[i - 1] > 0 > diff[i - 2] and\
+                sma0[i - 1] < middleband[i - 1] < sma1[i - 1] < sma2[i - 1] and pos >= 0 or\
+                history_data["Open"][i] <= tick - reverse_price and pos == 1:
             if pos == 1:
                 sell_date.append(history_data.index[i])
                 sellprice.append(history_data["Open"][i])
@@ -157,16 +159,16 @@ for i in range(len(history_data["Close"])):
                 ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
             else:
                 ROI.append(np.nan)
-            # 紀錄買空時的價格
+            # 紀錄空單進場時的價格
             tick = history_data["Open"][i]
             # 買進點增加nan
             up_markers.append(np.nan)
             # 開盤價+20的位置紀錄賣出訊號點
-            down_markers.append(history_data["Open"][i] + point)
+            down_markers.append(history_data["High"][i] + point)
             buyshort_date.append(history_data.index[i])
             buyshortprice.append(history_data["Open"][i])
 
-            # 賣出後改為買空，將pos設為-1
+            # 賣出後改為空單進場，將pos設為-1
             pos = -1
 
         else:
@@ -194,12 +196,13 @@ for i in range(len(sellshortprice)):
     else:
         losscounts += 1
         losstotal += sellshortprice[i] - buyshortprice[i]
-
+pd.set_option('display.unicode.ambiguous_as_wide', True)
+pd.set_option('display.unicode.east_asian_width', True)
 ROI_value = [x for x in ROI if np.isnan(x) == False]
 d = [buy_date, buyprice, sell_date, sellprice, ROI_long]
-df = pd.DataFrame(d, index=["買進日期", "買進價格", "賣出日期", "賣出價格", "投資報酬率"])
+df = pd.DataFrame(d, index=["買進日期", "買進價格", "賣出日期", "賣出價格", "投資報酬率"]).T
 d2 = [buyshort_date, buyshortprice, sellshort_date, sellshortprice, ROI_short]
-df2 = pd.DataFrame(d2, index=["買空日期", "買空價格", "賣空日期", "賣空價格", "投資報酬率"])
+df2 = pd.DataFrame(d2, index=["空單進場日期", "空單進場價格", "空單出場日期", "空單出場價格", "投資報酬率"]).T
 print(df.to_string())
 print(df2.to_string())
 print("最終持有資金:", cash)
@@ -213,9 +216,9 @@ if ROI_value:
     added_plots = {"上軌": mpf.make_addplot(upperband),
                    "中軌": mpf.make_addplot(middleband),
                    "下軌": mpf.make_addplot(lowerband),
-                   "Buy": mpf.make_addplot(up_markers, type='scatter', marker='^', markersize=100),
-                   "Sell": mpf.make_addplot(down_markers, type='scatter', marker='v', markersize=100),
-                   "ROI": mpf.make_addplot(ROI, type='scatter', panel=2)
+                   "買入": mpf.make_addplot(up_markers, type='scatter', marker='^', markersize=200),
+                   "賣出": mpf.make_addplot(down_markers, type='scatter', marker='v', markersize=200),
+                   "ROI": mpf.make_addplot(ROI,type='scatter', panel=1)
                    }
     # 設定圖表的顏色與網狀格格式
     style = mpf.make_mpf_style(marketcolors=mpf.make_marketcolors(up="r", down="g", inherit=True),
@@ -224,7 +227,6 @@ if ROI_value:
     # 畫布林線和成交量
     fig, axes = mpf.plot(history_data, type="candle", style=style,
                          addplot=list(added_plots.values()),
-                         volume=True,
                          returnfig=True)
 
     # 設定圖例
@@ -233,6 +235,10 @@ if ROI_value:
     axes[0].legend(handles=handles[2:], labels=list(added_plots.keys()))
 
     axes[0].set_ylabel("Price")
-    axes[2].set_ylabel("Volume")
-    axes[4].set_ylabel("ROI")
+    axes[2].set_ylabel("ROI")
+    plt.show()
+
+    series = np.array(ROI)
+    mask = np.isfinite(series)
+    plt.plot(np.array(history_data.index)[mask], series[mask])
     plt.show()
