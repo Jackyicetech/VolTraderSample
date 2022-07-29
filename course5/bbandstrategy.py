@@ -237,8 +237,3 @@ if ROI_value:
     axes[0].set_ylabel("Price")
     axes[2].set_ylabel("ROI")
     plt.show()
-
-    series = np.array(ROI)
-    mask = np.isfinite(series)
-    plt.plot(np.array(history_data.index)[mask], series[mask])
-    plt.show()
