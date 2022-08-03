@@ -91,12 +91,7 @@ class MCdataClient:
                 if rq_interval == "DK":
                     dt = datetime.strptime(item["Date"] + " " + "150000", datetime_format)
                 else:
-                    if int(item["Time"]) + 80000 >= 240000:
-                        num = 6 - len(str(int(item["Time"]) - 160000))
-                        item["Date"] = str(int(item["Date"]) + 1)
-                        dt = datetime.strptime(item["Date"] + " " + "0" * num + str(int(item["Time"]) - 160000), datetime_format)
-                    else:
-                        dt = datetime.strptime(item["Date"] + " " + str(int(item["Time"]) + 80000), datetime_format)
+                    dt = datetime.strptime(item["Date"] + " " + str(int(item["Time"])), datetime_format)+timedelta(hours=8)
             else:
                 dt = datetime.fromisoformat(item["Date"] + " " + item["Time"])
 
