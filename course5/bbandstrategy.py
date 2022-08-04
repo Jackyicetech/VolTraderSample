@@ -114,16 +114,16 @@ diff = history_data["Close"] - upperband
 diff2 = history_data["Close"] - lowerband
 
 for i in range(len(history_data["Close"])):
-    if 1 < i < len(history_data["Close"]):
+    if 0 < i < len(history_data["Close"])-1:
         # 如果上分鐘市場價高於下軌且這分鐘市場價又低於下軌，且在短均線皆大於長均線、沒有做多的情況下，或是空單價格上漲超過100點以上買進
-        if diff2[i - 1] < 0 < diff2[i - 2] and\
-            sma0[i - 1] > middleband[i - 1] > sma1[i - 1] > sma2[i - 1] and pos <= 0 or\
-                history_data["Open"][i - 1] >= tick + reverse_price and pos == -1:
+        if diff2[i] < 0 < diff2[i - 1] and\
+            sma0[i] > middleband[i] > sma1[i] > sma2[i] and pos <= 0 or\
+                history_data["Open"][i] >= tick + reverse_price and pos == -1:
             if pos == -1:
-                sellshort_date.append(history_data.index[i])
-                sellshortprice.append(history_data["Open"][i])
+                sellshort_date.append(history_data.index[i+1])
+                sellshortprice.append(history_data["Open"][i+1])
                 # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
-                cash += (tick - history_data["Open"][i]) * tick_price - 2 * fees
+                cash += (tick - history_data["Open"][i+1]) * tick_price - 2 * fees
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
                 # 投資報酬率增加賣出價格減買入價格除以初始資金
@@ -133,25 +133,25 @@ for i in range(len(history_data["Close"])):
                 # 投資報酬率及賣出點增加nan值
                 ROI.append(np.nan)
             # 紀錄買入時的價格
-            tick = history_data["Open"][i]
-            buy_date.append(history_data.index[i])
-            buyprice.append(history_data["Open"][i])
+            tick = history_data["Open"][i+1]
+            buy_date.append(history_data.index[i+1])
+            buyprice.append(history_data["Open"][i+1])
             # 開盤價-20的位置紀錄買入訊號點
-            up_markers.append(history_data["Low"][i] - point)
+            up_markers.append(history_data["Low"][i+1] - point)
             # 賣出點增加nan
             down_markers.append(np.nan)
             # 買入後有持倉設為1
             pos = 1
 
         # 如果上分鐘市場價低於上軌且這分鐘市場價又高於上軌，且在短均線皆小於長均線、沒有做空的情況下，或是做多後上下跌超過100點賣出
-        elif diff[i - 1] > 0 > diff[i - 2] and\
-                sma0[i - 1] < middleband[i - 1] < sma1[i - 1] < sma2[i - 1] and pos >= 0 or\
+        elif diff[i] > 0 > diff[i - 1] and\
+                sma0[i] < middleband[i] < sma1[i] < sma2[i] and pos >= 0 or\
                 history_data["Open"][i] <= tick - reverse_price and pos == 1:
             if pos == 1:
-                sell_date.append(history_data.index[i])
-                sellprice.append(history_data["Open"][i])
+                sell_date.append(history_data.index[i+1])
+                sellprice.append(history_data["Open"][i+1])
                 # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
-                cash += (history_data["Open"][i] - tick) * tick_price - 2 * fees
+                cash += (history_data["Open"][i+1] - tick) * tick_price - 2 * fees
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
                 # 投資報酬率增加賣出價格減買入價格除以初始資金
@@ -160,13 +160,13 @@ for i in range(len(history_data["Close"])):
             else:
                 ROI.append(np.nan)
             # 紀錄空單進場時的價格
-            tick = history_data["Open"][i]
+            tick = history_data["Open"][i+1]
             # 買進點增加nan
             up_markers.append(np.nan)
             # 開盤價+20的位置紀錄賣出訊號點
-            down_markers.append(history_data["High"][i] + point)
-            buyshort_date.append(history_data.index[i])
-            buyshortprice.append(history_data["Open"][i])
+            down_markers.append(history_data["High"][i+1] + point)
+            buyshort_date.append(history_data.index[i+1])
+            buyshortprice.append(history_data["Open"][i+1])
 
             # 賣出後改為空單進場，將pos設為-1
             pos = -1
@@ -236,4 +236,9 @@ if ROI_value:
 
     axes[0].set_ylabel("Price")
     axes[2].set_ylabel("ROI")
+    plt.show()
+
+    series = np.array(ROI)
+    mask = np.isfinite(series)
+    plt.plot(np.array(history_data.index)[mask], series[mask])
     plt.show()
