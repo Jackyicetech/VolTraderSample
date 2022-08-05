@@ -1,0 +1,12 @@
+tzlocal
+PySide6
+pyqtgraph
+qdarkstyle
+numpy
+pandas
+matplotlib
+seaborn
+ta-lib
+deap
+pyzmq
+plotly

@@ -1,0 +1,1 @@
+[E 2022-08-03 10:36:32,866 C:\Users\ADMIN\PycharmProjects\pythonProject\venv\lib\site-packages\shioaji\utils.py:44:raise_resp_error] {'status': {'status_code': 400}, 'response': {'token': '', 'accounts': [], 'detail': 'Incorrect userid or password', 'ip_address': '59.120.212.217', 'client_name': '', 'contract_download': False, 'web_token': ''}}
