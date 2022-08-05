@@ -122,4 +122,3 @@ class VolTraderGateway(BaseGateway):
         else:
             self.write_log(f"無此訂閱合約[{req.symbol}].")
 
-# TC.F.TWF.TXF.HOT
