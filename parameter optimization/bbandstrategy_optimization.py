@@ -61,16 +61,20 @@ g_QuoteZMQ.UnsubHistory(g_QuoteSession, testSymbol, ktype, sD, eD)
 # 登出帳號
 g_QuoteZMQ.Logout(g_QuoteSession)
 
+# 投資報酬率
 ROI_list = []
+# 勝率
 winrate = []
+# 賺賠比
 winloss_list = []
+# 參數值
 params = []
-
-
+# 初始資金十萬元
+money = 100000
 def Max_ROI(t1, t2=2, t3=2):
     # 設定各項初始參數及列表
     # 設定起始資金
-    cash = 100000
+    cash = money
     # 計算策略賺錢和賠錢的次數
     wincounts = 0
     wintotal = 0
@@ -78,7 +82,6 @@ def Max_ROI(t1, t2=2, t3=2):
     losstotal = 0
     # 紀路起始資金與每次賣出後的現金數
     cashlist = [cash]
-    equity = [cash, cash]
     # 買進日期及價格
     buy_date = []
     buyprice = []
@@ -115,70 +118,64 @@ def Max_ROI(t1, t2=2, t3=2):
     # 均線種類:matype 0:SMA 1:EMA 2:WMA ...
 
     # 計算當前價格減去上軌跟下軌的值
-    diff = history_data["Close"] - upperband
-    diff2 = history_data["Close"] - lowerband
+    close_upper = history_data["Close"] - upperband
+    close_lower = history_data["Close"] - lowerband
 
-    for i in range(len(history_data["Close"])):
-        if 1 < i < len(history_data["Close"]):
-            # 如果上分鐘市場價高於下軌且這分鐘市場價又低於下軌，且在沒有做多的情況下，在下分鐘開盤時買進
-            if diff2[i - 1] < 0 < diff2[i - 2] and pos <= 0:
-                if pos == -1:
-                    sellshort_date.append(history_data.index[i])
-                    sellshortprice.append(history_data["Open"][i])
-                    # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
-                    cash += (tick - history_data["Open"][i]) * tick_price - 2 * fees
-                    # 將賣出後的現金數紀錄到cashlist列表中
-                    cashlist.append(cash)
-                    # 投資報酬率增加賣出價格減買入價格除以初始資金
-                    ROI_short.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
-                    ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
-                else:
-                    # 投資報酬率及賣出點增加nan值
-                    ROI.append(np.nan)
-                    # 記錄總資產
-                    equity.append(equity[-1])
-                # 紀錄買入時的價格
-                tick = history_data["Open"][i]
-                buy_date.append(history_data.index[i])
-                buyprice.append(history_data["Open"][i])
-                # 紀錄買入訊號點
-                up_markers.append(history_data["Low"][i] - point)
-                # 賣出點增加nan
-                down_markers.append(np.nan)
-                # 買入後有持倉設為1
-                pos = 1
+    for i in range(1, len(history_data["Close"]) - 1):
 
-            # 如果上分鐘市場價低於上軌且這分鐘市場價又高於上軌，且在沒有做空的情況下，在下分鐘開盤時賣出
-            elif diff[i - 1] > 0 > diff[i - 2] and pos >= 0:
-                if pos == 1:
-                    sell_date.append(history_data.index[i])
-                    sellprice.append(history_data["Open"][i])
-                    # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
-                    cash += (history_data["Open"][i] - tick) * tick_price - 2 * fees
-                    # 將賣出後的現金數紀錄到cashlist列表中
-                    cashlist.append(cash)
-                    # 投資報酬率增加賣出價格減買入價格除以初始資金
-                    ROI_long.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
-                    ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
-                else:
-                    ROI.append(np.nan)
-                # 紀錄空單進場時的價格
-                tick = history_data["Open"][i]
-                # 買進點增加nan
-                up_markers.append(np.nan)
-                # 紀錄賣出訊號點
-                down_markers.append(history_data["High"][i] + point)
-                buyshort_date.append(history_data.index[i])
-                buyshortprice.append(history_data["Open"][i])
-
-                # 賣出後改為空單進場，將pos設為-1
-                pos = -1
-
+        # 如果上分鐘市場價高於下軌且這分鐘市場價又低於下軌，且在沒有做多的情況下，在下分鐘開盤時買進
+        if close_lower[i] < 0 < close_lower[i - 1] and pos <= 0:
+            if pos == -1:
+                sellshort_date.append(history_data.index[i + 1])
+                sellshortprice.append(history_data["Open"][i + 1])
+                # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
+                cash += (tick - history_data["Open"][i + 1]) * tick_price - 2 * fees
+                # 將賣出後的現金數紀錄到cashlist列表中
+                cashlist.append(cash)
+                # 投資報酬率增加賣出價格減買入價格除以初始資金
+                ROI_short.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+                ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
             else:
-                # 其餘情況增加nan值
+                # 投資報酬率及賣出點增加nan值
                 ROI.append(np.nan)
-                up_markers.append(np.nan)
-                down_markers.append(np.nan)
+
+            # 紀錄買入時的價格
+            tick = history_data["Open"][i + 1]
+            buy_date.append(history_data.index[i + 1])
+            buyprice.append(history_data["Open"][i + 1])
+            # 紀錄買入訊號點
+            up_markers.append(history_data["Low"][i + 1] - point)
+            # 賣出點增加nan
+            down_markers.append(np.nan)
+            # 買入後有持倉設為1
+            pos = 1
+
+        # 如果上分鐘市場價低於上軌且這分鐘市場價又高於上軌，且在沒有做空的情況下，在下分鐘開盤時賣出
+        elif close_upper[i] > 0 > close_upper[i - 1] and pos >= 0:
+            if pos == 1:
+                sell_date.append(history_data.index[i + 1])
+                sellprice.append(history_data["Open"][i + 1])
+                # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
+                cash += (history_data["Open"][i + 1] - tick) * tick_price - 2 * fees
+                # 將賣出後的現金數紀錄到cashlist列表中
+                cashlist.append(cash)
+                # 投資報酬率增加賣出價格減買入價格除以初始資金
+                ROI_long.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+                ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
+            else:
+                ROI.append(np.nan)
+            # 紀錄空單進場時的價格
+            tick = history_data["Open"][i + 1]
+            # 買進點增加nan
+            up_markers.append(np.nan)
+            # 紀錄賣出訊號點
+            down_markers.append(history_data["High"][i + 1] + point)
+            buyshort_date.append(history_data.index[i + 1])
+            buyshortprice.append(history_data["Open"][i + 1])
+
+            # 賣出後改為空單進場，將pos設為-1
+            pos = -1
+
         else:
             # 其餘情況增加nan值
             ROI.append(np.nan)
@@ -222,13 +219,15 @@ for mean in range(5, 30):
             Max_ROI(mean, up_sigma, down_sigma)
             params.append((mean, up_sigma, down_sigma))
 # 紀錄最大化投資報酬率的參數值
-max_mean = params[ROI_list.index(max(ROI_list))][0]
-max_up_sigma = params[ROI_list.index(max(ROI_list))][1]
-max_down_sigma = params[ROI_list.index(max(ROI_list))][2]
+index = ROI_list.index(max(ROI_list))
+max_mean, max_up_sigma, max_down_sigma = params[index]
 print('\n' * 2)
 print("最優化參數均線回測結果為:")
 print("最優參數為均線週期:%d,上標準差:%d, 下標準差:%d" % (max_mean, max_up_sigma, max_down_sigma))
-Max_ROI(max_mean, max_up_sigma, max_down_sigma)
+print("最終持有資金:", money*(1+ROI_list[index]))
+print("最終投資報酬率:",ROI_list[index])
+print("勝率:",winrate[index])
+print("賺賠比:",winloss_list[index])
 opt = [[mean[0] for mean in params] + [max_mean],
        [up_sigma[1] for up_sigma in params] + [max_up_sigma],
        [down_sigma[2] for down_sigma in params] + [max_down_sigma],
