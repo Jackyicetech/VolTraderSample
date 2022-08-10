@@ -7,9 +7,6 @@ import numpy as np
 import talib
 import pandas as pd
 from datetime import timedelta
-import time
-import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 
 # 建立 ZMQ 連線
 # 設定連線授權碼，通常不用改。
@@ -71,6 +68,8 @@ winloss_list = []
 params = []
 # 初始資金十萬元
 money = 100000
+
+
 def Max_ROI(t1, t2=2, t3=2):
     # 設定各項初始參數及列表
     # 設定起始資金
@@ -215,7 +214,7 @@ def Max_ROI(t1, t2=2, t3=2):
 for mean in range(5, 30):
     for up_sigma in range(2, 3):
         for down_sigma in range(2, 3):
-            print("\n參數為均線週期:%d,上標準差:%d, 下標準差:%d" % (mean, up_sigma, down_sigma))
+            print("\n參數為均線週期:%d,上標準差:%d,下標準差:%d" % (mean, up_sigma, down_sigma))
             Max_ROI(mean, up_sigma, down_sigma)
             params.append((mean, up_sigma, down_sigma))
 # 紀錄最大化投資報酬率的參數值
@@ -223,17 +222,18 @@ index = ROI_list.index(max(ROI_list))
 max_mean, max_up_sigma, max_down_sigma = params[index]
 print('\n' * 2)
 print("最優化參數均線回測結果為:")
-print("最優參數為均線週期:%d,上標準差:%d, 下標準差:%d" % (max_mean, max_up_sigma, max_down_sigma))
-print("最終持有資金:", money*(1+ROI_list[index]))
-print("最終投資報酬率:",ROI_list[index])
-print("勝率:",winrate[index])
-print("賺賠比:",winloss_list[index])
-opt = [[mean[0] for mean in params] + [max_mean],
-       [up_sigma[1] for up_sigma in params] + [max_up_sigma],
-       [down_sigma[2] for down_sigma in params] + [max_down_sigma],
+print("最優參數為均線週期:%d,上標準差:%d,下標準差:%d" % (max_mean, max_up_sigma, max_down_sigma))
+print("最終持有資金:", money * (1 + ROI_list[index]))
+print("最終投資報酬率:", ROI_list[index])
+print("勝率:", winrate[index])
+print("賺賠比:", winloss_list[index])
+opt = [[mean[0] for mean in params],
+       [up_sigma[1] for up_sigma in params],
+       [down_sigma[2] for down_sigma in params],
        winrate, winloss_list, ROI_list]
 df = pd.DataFrame(opt, index=["均線週期", "上標準差數", "下標準差數", "勝率", "賺賠比", "投資報酬率"]).T
 df["均線週期"] = df["均線週期"].astype(int)
 df["上標準差數"] = df["上標準差數"].astype(int)
 df["下標準差數"] = df["下標準差數"].astype(int)
-df.to_csv("優化結果.csv")
+df.index = df.index + 1
+df.to_csv("優化結果.csv", index_label="參數編號")
