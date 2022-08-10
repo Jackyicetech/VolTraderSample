@@ -13,11 +13,11 @@ Course1: [【手把手系列】達錢 Python 【行情&歷史數據】串接設�
 Course2: [【手把手系列】達錢 Python 第一個指標（均線）](https://www.touchance.com.tw/vt_post?idno=201)\
 Course3: [【手把手系列】均線策略 + 回測教學](https://www.touchance.com.tw/vt_post?idno=202)\
 Course5: [【手把手系列】布林通道策略 + 回測教學](https://www.touchance.com.tw/vt_post?idno=205)\
+parameter optimization:[【手把手系列】參數最佳化](https://www.touchance.com.tw/vt_post?idno=207)\
 Course4(未發佈): [【交易】如何串接交易教學](https://www.touchance.com.tw/vt_post?idno=203)\
 Course6(未發佈): [【策略】第三個策略（KD 策略）+ 回測](https://www.touchance.com.tw/vt_post?idno=204)
 # 額外課程
 closestrategy(未發佈):[【策略】三關價策略回測](https://www.touchance.com.tw/vt_post?idno=206)\
-parameter optimization(未發佈):[參數優化](https://www.touchance.com.tw/vt_post?idno=207)\
 VNPY課程:\
 VNPY_Jupyter Notebook(未發佈):[在Jupyter Notebook上使用VNPY回測VolTrader](https://www.touchance.com.tw/vt_post?idno=208)\
 VNPY_Pycharm(未發佈):[在Pycharm使用VNPY回測VolTrader](https://www.touchance.com.tw/vt_post?idno=209)\
