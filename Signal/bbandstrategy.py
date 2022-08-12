@@ -315,7 +315,6 @@ table.add_rows(
                                                 history_data.index[0]).days * 365, 4)],
           ["年化標準差:", np.round(annual_std, 4)],
           ["年化變異數:", np.round(annual_std ** 2, 4)],
-          # ["年均複合增長率:", np.round((1 + sum(ROI_value)) ** 12 - 1, 4)],
           ["Alpha:", np.round(alpha, 4)],
           ["Beta:", np.round(beta, 4)],
           ["Sharp Ratio:", np.round(sharp_ratio, 4)],
@@ -351,8 +350,3 @@ axes[2].set_ylabel("ROI")
 axes[4].set_ylabel("DD")
 axes[6].set_ylabel("Equity")
 plt.show()
-
-# series = np.array(ROI)
-# mask = np.isfinite(series)
-# plt.plot(np.array(history_data.index)[mask], series[mask])
-# plt.show()
