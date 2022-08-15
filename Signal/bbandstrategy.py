@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 from datetime import timedelta
 from prettytable import PrettyTable
-import statsmodels.api as sm
-from statsmodels import regression
+import operator
 
 # 建立 ZMQ 連線
 # 設定連線授權碼，通常不用改。
@@ -147,7 +146,7 @@ for i in range(len(history_data["Close"])):
             # 紀錄每分投資報酬率
             ROI_minute.append((equity[-1] - equity[-2]) / equity[-2])
 
-            tdd += (history_data["Open"][i] - history_data["Open"][i + 1]) * tick_price / cashlist[0]
+            tdd += (history_data["Open"][i] - history_data["Open"][i + 1]) * tick_price
             if tdd > 0:
                 tdd = 0
                 temp = 0
@@ -191,7 +190,7 @@ for i in range(len(history_data["Close"])):
             # 紀錄每日投資報酬率
             ROI_minute.append((equity[-1] - equity[-2]) / equity[-2])
 
-            tdd += (history_data["Open"][i + 1] - history_data["Open"][i]) * tick_price / cashlist[0]
+            tdd += (history_data["Open"][i + 1] - history_data["Open"][i]) * tick_price
             if tdd > 0:
                 tdd = 0
                 temp = 0
@@ -203,32 +202,41 @@ for i in range(len(history_data["Close"])):
             DD.append(tdd)
 
         else:
+            # 多單情況
             if pos > 0:
-                equity.append((history_data["Open"][i + 1] - history_data["Open"][i]) * tick_price + equity[-1])
+                equity.append((history_data["Open"][i + 1] -
+                               history_data["Open"][i]) * tick_price + equity[-1])
                 ROI_minute.append((equity[-1] - equity[-2]) / equity[-2])
-
-                tdd += (history_data["Open"][i + 1] - history_data["Open"][i]) * tick_price / cashlist[0]
+                # 累加tdd
+                tdd += (history_data["Open"][i + 1] - history_data["Open"][i]) * tick_price
                 if tdd > 0:
+                    # 重置tdd跟temp
                     tdd = 0
                     temp = 0
                 else:
+                    # 更新mdd跟count
                     mdd = min(tdd, mdd)
                     temp += 1
                     count = max(temp, count)
+            # 空單情況
             elif pos < 0:
-                equity.append((history_data["Open"][i] - history_data["Open"][i + 1]) * tick_price + equity[-1])
+                equity.append((history_data["Open"][i] -
+                               history_data["Open"][i + 1]) * tick_price + equity[-1])
                 ROI_minute.append((equity[-2] - equity[-1]) / equity[-2])
-
-                tdd += (history_data["Open"][i] - history_data["Open"][i + 1]) * tick_price / cashlist[0]
+                # 累加tdd
+                tdd += (history_data["Open"][i] - history_data["Open"][i + 1]) * tick_price
                 if tdd > 0:
+                    # 重置tdd跟temp
                     tdd = 0
                     temp = 0
                 else:
+                    # 更新mdd跟count
                     mdd = min(tdd, mdd)
                     temp += 1
                     count = max(temp, count)
             else:
                 equity.append(equity[-1])
+            # 紀錄回撤值到回撤列表中
             DD.append(tdd)
             # 其餘情況增加nan值
             ROI.append(np.nan)
@@ -261,12 +269,11 @@ for i in range(len(sellshortprice)):
 pd.set_option('display.unicode.ambiguous_as_wide', True)
 pd.set_option('display.unicode.east_asian_width', True)
 ROI_value = [x for x in ROI if np.isnan(x) == False]
-d = [buy_date, buyprice, sell_date, sellprice, ROI_long]
-df = pd.DataFrame(d, index=["買進日期", "買進價格", "賣出日期", "賣出價格", "投資報酬率"]).T
-d2 = [buyshort_date, buyshortprice, sellshort_date, sellshortprice, ROI_short]
-df2 = pd.DataFrame(d2, index=["空單進場日期", "空單進場價格", "空單出場日期", "空單出場價格", "投資報酬率"]).T
-print(df.to_string())
-print(df2.to_string())
+d = [["多單"] * len(buy_date) + ["空單"] * len(buyshort_date), buy_date + buyshort_date, buyprice + buyshortprice,
+     sell_date + sellshort_date, sellprice + sellshortprice, ROI_long + ROI_short]
+df = pd.DataFrame(d, index=["多空", "買進日期", "買進價格", "賣出日期", "賣出價格", "投資報酬率"]).T
+df = df.sort_values("買進日期")
+print(df.to_string(index=False))
 print("最終持有資金:", cash)
 
 # 計算各種回測指標
@@ -275,50 +282,58 @@ averge_loss = losstotal / losscounts * tick_price / cashlist[0]
 earn_ratio = wincounts / len(sellprice + sellshortprice)
 odds = averge_win / averge_loss
 annual_std = np.std(ROI_minute) * np.sqrt(len(ROI_minute)) / np.sqrt(cashlist[0])
-dates = (max(sellshort_date[-1], sell_date[-1]) - min(buyshort_date[0], buy_date[0])).days
-# 銀行定期利率
-riskfree = 0.009 / 1440
-sharp_ratio = (np.mean(ROI_minute) - riskfree) / np.std(ROI_minute)
+dates = len(pd.bdate_range(min(buyshort_date[0], buy_date[0]),
+                           max(sellshort_date[-1], sell_date[-1])))
+
+signal = ["總投資報酬率(未扣手續費)", "淨投資報酬率(扣手續費)", "總交易日", "最終持有資金", "淨利潤",
+          "勝率", "損失率", "平均獲利", "平均虧損", "盈虧比", "期望值", "總交易次數", "總手續費",
+          "最大虧損", "最大資金回撤率", "最大回撤天數", "日均盈虧", "日均手續費", "日均成交筆數",
+          "日均成交金額", "年化收益率", "年化標準差", "年化變異數"]
+values = [np.round(sum(ROI_value) + len(sellshort_date + sell_date) * fees / cashlist[0], 4),
+          np.round(sum(ROI_value), 4),
+          dates,
+          cash,
+          cash - cashlist[0],
+          np.round(earn_ratio, 4),
+          np.round(1 - earn_ratio, 4),
+          np.round(averge_win, 4),
+          np.round(averge_loss, 4),
+          np.round(odds, 4),
+          np.round(earn_ratio * odds - (1 - earn_ratio), 4),
+          len(sellshort_date + sell_date),
+          len(sellshort_date + sell_date) * fees,
+          np.round(mdd, 4),
+          np.round(1 - min(equity) / cashlist[0], 4),
+          np.round(count / 1440, 1),
+          np.round((cash - cashlist[0]) / dates, 4),
+          np.round(len(sellshort_date + sell_date) * fees * 2 / dates, 4),
+          np.round((len(sellshort_date + sell_date)) / dates, 4),
+          np.round(sum(sellprice + buyprice) * tick_price / dates, 4),
+          np.round(sum(ROI_value) / (history_data.index[-1] - history_data.index[0]).days * 365, 4),
+          np.round(annual_std, 4),
+          np.round(annual_std ** 2, 4)]
+criteria = ["> 0", "> 0", "> 0", "> 0", "> 0", "> 0.5", "< 0.5", "> 0", "> 0", "> 1", "> 0",
+            "> 0", "> 0", "< 0", "< 1", "> 0", "> 0", "> 0", "> 0", "> 0", "> 0", "> 0", "> 0"]
+ops = {
+    '<': operator.lt,
+    '<=': operator.le,
+    '>=': operator.ge,
+    '>': operator.gt
+}
 
 
-def data(x, y):
-    x = sm.add_constant(x)
-    model = regression.linear_model.OLS(y, x).fit()
-    return model.params[0], model.params[1]
+def str2op(num1, oper, num2):
+    num1, num2 = float(num1), float(num2)
+    return ops[oper](num1, num2)
 
 
-alpha, beta = data(history_data["Open"], history_data["Open"])
-table = PrettyTable(["各項指標名稱", "數值"])
-table.add_rows(
-    rows=[["總投資報酬率(未扣手續費):", np.round(sum(ROI_value) +
-                                      len(sellshort_date + sell_date) * fees / cashlist[0], 4)],
-          ["淨投資報酬率(扣手續費):", np.round(sum(ROI_value), 4)],
-          ["總交易日:", dates],
-          ["起始資金:", cashlist[0]],
-          ["最終持有資金:", cash],
-          ["淨利潤:", cash - cashlist[0]],
-          ["勝率:", np.round(earn_ratio, 4)],
-          ["損失率:", np.round(1 - earn_ratio, 4)],
-          ["平均獲利:", np.round(averge_win, 4)],
-          ["平均虧損:", np.round(averge_loss, 4)],
-          ["賺賠比:", np.round(odds, 4)],
-          ["期望值:", np.round(earn_ratio * odds - (1 - earn_ratio), 4)],
-          ["總交易次數:", len(sellshort_date + sell_date)],
-          ["總手續費:", len(sellshort_date + sell_date) * fees],
-          ["最大資金回撤:", np.round(mdd, 4)],
-          ["最大回撤天數:", np.round(count / 1440, 1)],
-          ["日均盈虧:", np.round((cash - cashlist[0]) / dates, 4)],
-          ["日均手續費:", np.round(len(sellshort_date + sell_date) * fees * 2 / dates, 4)],
-          ["日均成交筆數:", np.round((len(sellshort_date + sell_date)) / dates, 4)],
-          ["日均成交金額:", np.round(sum(sellprice + buyprice) * tick_price / dates, 4)],
-          ["年化收益率:", np.round(sum(ROI_value) / (history_data.index[-1] -
-                                                history_data.index[0]).days * 365, 4)],
-          ["年化標準差:", np.round(annual_std, 4)],
-          ["年化變異數:", np.round(annual_std ** 2, 4)],
-          ["Alpha:", np.round(alpha, 4)],
-          ["Beta:", np.round(beta, 4)],
-          ["Sharp Ratio:", np.round(sharp_ratio, 4)],
-          ["Treynor ratio:", np.round((np.mean(ROI_minute) - riskfree) / beta, 4)]])
+table = PrettyTable(["各項指標名稱", "數值", "注意"])
+for i in range(len(signal)):
+    if str2op(values[i], *(criteria[i].split())):
+        table.add_row([signal[i], values[i], ''])
+    else:
+        table.add_row([signal[i], values[i], '*'])
+
 table.align = "l"
 print(table)
 # 想要增加的圖表
@@ -350,3 +365,8 @@ axes[2].set_ylabel("ROI")
 axes[4].set_ylabel("DD")
 axes[6].set_ylabel("Equity")
 plt.show()
+
+# series = np.array(ROI)
+# mask = np.isfinite(series)
+# plt.plot(np.array(history_data.index)[mask], series[mask])
+# plt.show()
