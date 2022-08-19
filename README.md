@@ -13,7 +13,8 @@ Course1: [【手把手系列】達錢 Python 【行情&歷史數據】串接設�
 Course2: [【手把手系列】達錢 Python 第一個指標（均線）](https://www.touchance.com.tw/vt_post?idno=201)\
 Course3: [【手把手系列】均線策略 + 回測教學](https://www.touchance.com.tw/vt_post?idno=202)\
 Course4: [【手把手系列】布林通道策略 + 回測教學](https://www.touchance.com.tw/vt_post?idno=205)\
-Course5:[【手把手系列】參數最佳化](https://www.touchance.com.tw/vt_post?idno=207)
+Course5:[【手把手系列】參數最佳化](https://www.touchance.com.tw/vt_post?idno=207)\
+Course6:[【手把手系列】策略回測績效報告](https://www.touchance.com.tw/vt_post?idno=218)
 
 # 額外課程
 closestrategy(未發佈):[【策略】三關價策略回測](https://www.touchance.com.tw/vt_post?idno=206)\
