@@ -61,29 +61,17 @@ losscounts = 0
 losstotal = 0
 # 紀路起始資金與每次賣出後的現金數
 cashlist = [cash]
-# 買進日期及價格
-buy_date = []
-buyprice = []
-# 賣出日期及價格
-sell_date = []
-sellprice = []
-# 空單進場日期及價格
-buyshort_date = []
-buyshortprice = []
-# 空單出場日期及價格
-sellshort_date = []
-sellshortprice = []
+# 買進賣出日期及價格
+buy_date, buyprice, sell_date, sellprice = [], [], [], []
+# 空單進出場日期及價格
+buyshort_date, buyshortprice, sellshort_date, sellshortprice = [], [], [], []
 equity = [cash, cash]
 # 投資報酬率
-ROI = []
-ROI_long = []
-ROI_short = []
-ROI_minute = []
+ROI, ROI_long, ROI_short, ROI_minute = [], [], [], []
 tdd = mdd = 0
 DD = []
 # 買進賣出訊號點
-up_markers = []
-down_markers = []
+up_markers, down_markers = [], []
 # 設定tick倍率
 tick_price = 200
 tick = 0
