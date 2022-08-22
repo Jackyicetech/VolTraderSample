@@ -103,7 +103,6 @@ def equity_mdd(tdd, mdd, temp, count, pos):
     if not pos:
         equity.append(equity[-1])
         return tdd, mdd, temp, count
-
     else:
         # 計算損益
         profit_or_loss = (history_data["Open"][i + 1] - history_data["Open"][i]) * tick_price * pos
