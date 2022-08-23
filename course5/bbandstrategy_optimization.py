@@ -127,8 +127,8 @@ def Max_ROI(t1, t2=2, t3=2):
             if pos == -1:
                 sellshort_date.append(history_data.index[i + 1])
                 sellshortprice.append(history_data["Open"][i + 1])
-                # 賣出後計算當前資金，1tick=200元，再扣掉買入時的手續費
-                cash += (tick - history_data["Open"][i + 1]) * tick_price - fees
+                # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
+                cash += (tick - history_data["Open"][i + 1]) * tick_price - 2 * fees
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
                 # 投資報酬率增加賣出價格減買入價格除以初始資金
@@ -154,8 +154,8 @@ def Max_ROI(t1, t2=2, t3=2):
             if pos == 1:
                 sell_date.append(history_data.index[i + 1])
                 sellprice.append(history_data["Open"][i + 1])
-                # 賣出後計算當前資金，1tick=200元，再扣掉賣出時的手續費
-                cash += (history_data["Open"][i + 1] - tick) * tick_price - fees
+                # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
+                cash += (history_data["Open"][i + 1] - tick) * tick_price - 2 * fees
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
                 # 投資報酬率增加賣出價格減買入價格除以初始資金
