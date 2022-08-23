@@ -131,8 +131,8 @@ for i in range(len(history_data["Close"])):
             if pos == -1:
                 sellshort_date.append(history_data.index[i + 1])
                 sellshortprice.append(history_data["Open"][i + 1])
-                # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
-                cash += (tick - history_data["Open"][i + 1]) * tick_price - 2 * fees
+                # 賣出後計算當前資金，1tick=200元，再扣掉買入時的手續費
+                cash += (tick - history_data["Open"][i + 1]) * tick_price - fees
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
                 # 投資報酬率增加賣出價格減買入價格除以初始資金
@@ -162,8 +162,8 @@ for i in range(len(history_data["Close"])):
             if pos == 1:
                 sell_date.append(history_data.index[i + 1])
                 sellprice.append(history_data["Open"][i + 1])
-                # 賣出後計算當前資金，1tick=200元，再扣掉買入及賣出各50元手續費
-                cash += (history_data["Open"][i + 1] - tick) * tick_price - 2 * fees
+                # 賣出後計算當前資金，1tick=200元，再扣掉賣出時的手續費
+                cash += (history_data["Open"][i + 1] - tick) * tick_price - fees
                 # 將賣出後的現金數紀錄到cashlist列表中
                 cashlist.append(cash)
                 # 投資報酬率增加賣出價格減買入價格除以初始資金
@@ -233,7 +233,6 @@ df = pd.DataFrame(d, index=["多空", "買進日期", "買進價格", "賣出日
 df = df.sort_values("買進日期")
 print(df.to_string(index=False))
 print("最終持有資金:", cash)
-
 # 計算各種回測指標
 # 平均獲利
 averge_win = wintotal / wincounts * tick_price / cashlist[0]
