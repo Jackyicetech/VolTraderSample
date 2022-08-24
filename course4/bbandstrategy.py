@@ -130,6 +130,8 @@ for i in range(len(history_data["Close"])):
                 ROI_short.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
                 ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
             else:
+                # 多單進場手續費
+                cash -= fees
                 # 投資報酬率及賣出點增加nan值
                 ROI.append(np.nan)
             # 紀錄買入時的價格
@@ -158,6 +160,8 @@ for i in range(len(history_data["Close"])):
                 ROI_long.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
                 ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
             else:
+                # 空單進場手續費
+                cash -= fees
                 ROI.append(np.nan)
             # 紀錄空單進場時的價格
             tick = history_data["Open"][i + 1]
