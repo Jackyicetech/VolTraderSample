@@ -139,6 +139,8 @@ for i in range(len(history_data["Close"])):
                 ROI_short.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
                 ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
             else:
+                # 多單進場手續費
+                cash -= fees
                 # 投資報酬率及賣出點增加nan值
                 ROI.append(np.nan)
             # 紀錄買入時的價格
@@ -170,6 +172,8 @@ for i in range(len(history_data["Close"])):
                 ROI_long.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
                 ROI.append((cashlist[-1] - cashlist[-2]) / cashlist[0])
             else:
+                # 空單進場手續費
+                cash -= fees
                 ROI.append(np.nan)
             # 紀錄空單進場時的價格
             tick = history_data["Open"][i + 1]
@@ -244,16 +248,18 @@ earn_ratio = wincounts / len(sellprice + sellshortprice)
 odds = averge_win / averge_loss
 # 年化標準差
 annual_std = np.std(ROI_minute) * np.sqrt(len(ROI_minute)) / np.sqrt(cashlist[0])
-# 	總交易日
+# 總交易日
 dates = len(pd.bdate_range(min(buyshort_date[0], buy_date[0]),
                            max(sellshort_date[-1], sell_date[-1])))
+# 總交易次數
+trades = len(sellshort_date + sell_date)
 # 指標名稱
 signal = ["總投資報酬率(未扣手續費)", "淨投資報酬率(扣手續費)", "總交易日", "最終持有資金", "淨利潤",
           "勝率", "損失率", "平均獲利", "平均虧損", "盈虧比", "期望值", "總交易次數", "總手續費",
           "最大虧損", "最大資金回撤率", "最大回撤天數", "日均盈虧", "日均手續費", "日均成交筆數",
           "日均成交金額", "年化收益率", "年化標準差", "年化變異數"]
 # 指標數值
-values = [np.round(sum(ROI_value) + len(sellshort_date + sell_date) * fees / cashlist[0], 4),
+values = [np.round(sum(ROI_value) + (2*trades+1) * fees / cashlist[0], 4),
           np.round(sum(ROI_value), 4),
           dates,
           cash,
@@ -264,14 +270,14 @@ values = [np.round(sum(ROI_value) + len(sellshort_date + sell_date) * fees / cas
           np.round(averge_loss, 4),
           np.round(odds, 4),
           np.round(earn_ratio * odds - (1 - earn_ratio), 4),
-          len(sellshort_date + sell_date),
-          len(sellshort_date + sell_date) * fees,
+          trades,
+          (2*trades+1) * fees,
           np.round(mdd, 4),
           np.round(1 - min(equity) / cashlist[0], 4),
           np.round(count / 1140, 1),
           np.round((cash - cashlist[0]) / dates, 4),
-          np.round(len(sellshort_date + sell_date) * fees * 2 / dates, 4),
-          np.round((len(sellshort_date + sell_date)) / dates, 4),
+          np.round((2*trades+1) * fees * 2 / dates, 4),
+          np.round(trades / dates, 4),
           np.round(sum(sellprice + buyprice) * tick_price / dates, 4),
           np.round(sum(ROI_value) / (history_data.index[-1] - history_data.index[0]).days * 365, 4),
           np.round(annual_std, 4),
