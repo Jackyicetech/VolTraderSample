@@ -31,7 +31,7 @@ def main():
     # 連線成功后，將取得的 Session Key 儲存下來，後面調用指令需要帶入。
     g_QuoteSession = q_data["SessionKey"]
 
-    #####################################################################行情################################################
+    #############行情#############
     # 建立一個行情執行緒
     t1 = threading.Thread(target=quote_sub_th, args=(g_QuoteZMQ, q_data["SubPort"],))
     t1.daemon = True
