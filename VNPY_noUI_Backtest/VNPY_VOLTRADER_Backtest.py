@@ -197,20 +197,13 @@ class SMAStrategy(CtaTemplate):
         self.put_event()
 
 
-def get_commission(cost, multiplier, qty, direction):
-    commission = cost * multiplier * qty * (2 / 100000)
-    fee = 50
-
-    return commission + fee
-
-
 engine = BacktestingEngine()
 engine.set_parameters(
     vt_symbol= "test.LOCAL",
     interval=interval_setting,
     start=start_time,
     end=end_time,
-    rate=get_commission,  # 手續費
+    rate=0.00002,  # 手續費
     slippage=2,  # 滑價
     size=200,  # 契約倍率
     pricetick=1,  # 價格變動單位
