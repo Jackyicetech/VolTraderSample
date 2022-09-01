@@ -22,7 +22,7 @@ INTERVAL_VT2RQ = {
 }
 # 時間週期
 interval_setting = Interval.DAILY
-# 圖片格式
+# 渲染格式設定
 pio.renderers.default = 'iframe'
 # 開始時間
 start_time = datetime(2002, 1, 1)
@@ -30,6 +30,8 @@ start_time = datetime(2002, 1, 1)
 end_time = datetime(2022, 7, 15)
 # 合約代碼
 contract = "TC.F.TWF.TXF.HOT"
+# 轉換後的合約代碼
+contract_vnpy = contract.replace(".", "-")
 
 
 class VTdataClient:
@@ -75,6 +77,7 @@ class VTdataClient:
                          datetime.strftime(end, "%Y%m%d") + "23")
         bars = []
         datetime_format = "%Y%m%d%H%M"
+
         for i in his.index:
             if rq_interval == "DK":
                 # 日資料
@@ -87,7 +90,7 @@ class VTdataClient:
             open_interest = 0
             # VNPY格式的資料
             bar = BarData(
-                symbol="test",
+                symbol=contract_vnpy,
                 exchange=exchange,
                 datetime=dt,
                 interval=interval,
@@ -110,24 +113,19 @@ class VTdataClient:
         # return bars
 
 
-vtdata_client = VTdataClient()
-vtdata_client.query_history(contract)
-
-
 class SMAStrategy(CtaTemplate):
-    # 定義參數
-    short_period = 10
-    long_period = 20
+    # 短周期
+    short_period = 12
+    # 長周期
+    long_period = 24
 
-    # 定義變數
-    short_ma0 = 0.0
-    short_ma1 = 0.0
-    long_ma0 = 0.0
-    long_ma1 = 0.0
-    # 參數名
-    parameters = ["short_period", "long_period"]
-    # 變數名
-    variables = ["short_ma0", "short_ma1", "long_ma0", "long_ma1"]
+    # 短周期均線暫存值
+    short_ma0 = None
+    short_ma1 = None
+    # 長周期均線暫存值
+    long_ma0 = None
+    long_ma1 = None
+
 
     def __init__(
             self,
@@ -136,9 +134,8 @@ class SMAStrategy(CtaTemplate):
             vt_symbol: str,
             setting: dict,
     ):
+        # 呼叫父類別的初始化函式
         super().__init__(cta_engine, strategy_name, vt_symbol, setting)
-
-        self.bg = BarGenerator(self.on_bar)
         self.am = ArrayManager()
 
     def on_init(self):
@@ -147,19 +144,9 @@ class SMAStrategy(CtaTemplate):
 
         self.load_bar(10)
 
-    def on_start(self):
-        """啟動"""
-        self.write_log("策略啟動")
-
-    def on_stop(self):
-        """停止"""
-        self.write_log("策略停止")
-
     def on_bar(self, bar: BarData):
         """K線更新"""
-
         am = self.am
-
         am.update_bar(bar)
 
         if not am.inited:
@@ -175,68 +162,57 @@ class SMAStrategy(CtaTemplate):
         self.long_ma1 = long_ma[-2]
 
         # 判斷均線交叉
+        # 黃金交叉
         cross_over = (self.short_ma0 >= self.long_ma0 and
                       self.short_ma1 < self.long_ma1)
-
+        # 死亡交叉
         cross_below = (self.short_ma0 <= self.long_ma0 and
                        self.short_ma1 > self.long_ma1)
 
+        # 黃金交叉時進場
         if cross_over:
-            price = bar.close_price
-
             if self.pos == 0:
-                self.buy(price, 1)
-
+                self.buy(bar.close_price, 1)
+        # 死亡交叉出場
         elif cross_below:
-            price = bar.close_price
-
             if self.pos > 0:
                 self.sell(bar.close_price, 1)
 
-        # 更新圖形介面
-        self.put_event()
 
-
-engine = BacktestingEngine()
-engine.set_parameters(
-    vt_symbol= "test.LOCAL",
-    interval=interval_setting,
-    start=start_time,
-    end=end_time,
-    rate=0.00002,  # 手續費
-    slippage=2,  # 滑價
-    size=200,  # 契約倍率
-    pricetick=1,  # 價格變動單位
-    capital=500_000  # 回測本金
-)
-
-settings = {
-    'short_period': 12,
-    'long_period': 24
-}
-# 添加策略
-engine.add_strategy(SMAStrategy, settings)
-# 讀取資料
-engine.load_data()
-# 執行回測
-engine.run_backtesting()
-df = engine.calculate_result()
-# 計算統計指標
-engine.calculate_statistics()
-# 顯示回測績效圖表
-engine.show_chart()
-
-for trade in engine.get_all_trades():
-    # 顯示交易時間、價格等資訊
-    print(trade)
 
 if __name__ == '__main__':
-    # 參數優化設定
-    setting = OptimizationSetting()
-    # 最大化目標
-    setting.set_target("total_net_pnl")  # total_net_pnl, sharpe_ratio
-    # 參數範圍
-    setting.add_parameter("short_period", 10, 20, 1)
-    setting.add_parameter("long_period", 21, 30, 1)
+    # 呼叫VTdataClient類別
+    vtdata_client = VTdataClient()
+    # 讀取歷史資料並儲存進資料庫
+    vtdata_client.query_history(contract)
+    # 設置VNPY回測引擎
+    engine = BacktestingEngine()
+    # 設置參數
+    engine.set_parameters(
+        vt_symbol=contract_vnpy+".LOCAL",
+        interval=interval_setting,
+        start=start_time,
+        end=end_time,
+        rate=0.00002,  # 交易稅
+        slippage=2,  # 滑價
+        size=200,  # 契約倍率
+        pricetick=1,  # 價格變動單位
+        capital=500_000  # 回測本金
+    )
+    # 策略參數設定
+    settings = {}
+    # 添加策略
+    engine.add_strategy(SMAStrategy, settings)
+    # 讀取資料
+    engine.load_data()
+    # 執行回測
+    engine.run_backtesting()
+    df = engine.calculate_result()
+    # 計算統計指標
+    engine.calculate_statistics()
+    # 顯示回測績效圖表
+    engine.show_chart()
 
-    results = engine.run_bf_optimization(setting)
+    for trade in engine.get_all_trades():
+        # 顯示交易時間、價格等資訊
+        print(trade)
